@@ -1,0 +1,7 @@
+#Ignore everything
+*.o
+samples/*
+solutions/*
+
+#except myself
+!.gitignore
