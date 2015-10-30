@@ -9,12 +9,21 @@
 #include <string.h>
 #include "tac.h"
 #include "mips.h"
+#include "symbol_table.h"
 
 Location* CodeGenerator::ThisPtr= new Location(fpRelative, 4, "this");
+int CodeGenerator::OffsetToLocal = CodeGenerator::OffsetToFirstLocal;
 
 CodeGenerator::CodeGenerator()
 {
 
+}
+
+Location *CodeGenerator::NewLabelWithCode() {
+  char * temp = NewLabel();
+  GenLabel(temp);
+  Location * declared_variable = GenLoadLabel(temp);
+  return declared_variable;
 }
 
 char *CodeGenerator::NewLabel()
@@ -30,14 +39,21 @@ Location *CodeGenerator::GenTempVar()
 {
   static int nextTempNum;
   char temp[10];
-  Location *result = NULL;
   sprintf(temp, "_tmp%d", nextTempNum++);
+  Segment current_segment = SymbolTable::active->GetClassName()->GetSegment();
+  Location * result = new Location(current_segment, OffsetToLocal, temp);
+  OffsetToLocal -= 4;
   /* pp5: need to create variable in proper location
      in stack frame for use as temporary. Until you
      do that, the assert below will always fail to remind
      you this needs to be implemented  */
+
   Assert(result != NULL);
   return result;
+}
+
+void CodeGenerator::ResetStackFrame() {
+  OffsetToLocal = OffsetToFirstLocal;
 }
 
 

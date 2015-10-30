@@ -19,6 +19,7 @@
 #include "tac.h"
 
 
+
               // These codes are used to identify the built-in functions
 typedef enum { Alloc, ReadLine, ReadInteger, StringEqual,
                PrintInt, PrintString, PrintBool, Halt, NumBuiltIns } BuiltIn;
@@ -42,6 +43,9 @@ class CodeGenerator {
     static const int OffsetToFirstLocal = -8,
                      OffsetToFirstParam = 4,
                      OffsetToFirstGlobal = 0;
+
+    static int OffsetToLocal;
+
     static const int VarSize = 4;
 
     static Location* ThisPtr;
@@ -52,10 +56,15 @@ class CodeGenerator {
          // generate any Tac instructions (see GenLabel below if needed)
     char *NewLabel();
 
+    // Helper function by CF to create a label, add it to the generated code, and get the location
+    Location *NewLabelWithCode();
+
 
          // Creates and returns a Location for a new uniquely named
          // temp variable. Does not generate any Tac instructions
     Location *GenTempVar();
+
+    static void ResetStackFrame();
 
          // Generates Tac instructions to load a constant value. Creates
          // a new temp var to hold the result. The constant
@@ -108,6 +117,7 @@ class CodeGenerator {
          // clean up after an ACall or LCall instruction. All parameters
          // are removed with one adjustment of the stack pointer.
     void GenPopParams(int numBytesOfParams);
+
 
          // Generates the Tac instructions for a LCall, a jump to
          // a compile-time label. The params to the target routine
