@@ -11,9 +11,10 @@
 #include "mips.h"
 
 Location* CodeGenerator::ThisPtr= new Location(fpRelative, 4, "this");
-  
+
 CodeGenerator::CodeGenerator()
 {
+
 }
 
 char *CodeGenerator::NewLabel()
@@ -39,7 +40,7 @@ Location *CodeGenerator::GenTempVar()
   return result;
 }
 
- 
+
 Location *CodeGenerator::GenLoadConstant(int value)
 {
   Location *result = GenTempVar();
@@ -52,14 +53,14 @@ Location *CodeGenerator::GenLoadConstant(const char *s)
   Location *result = GenTempVar();
   code.push_back(new LoadStringConstant(result, s));
   return result;
-} 
+}
 
 Location *CodeGenerator::GenLoadLabel(const char *label)
 {
   Location *result = GenTempVar();
   code.push_back(new LoadLabel(result, label));
   return result;
-} 
+}
 
 
 void CodeGenerator::GenAssign(Location *dst, Location *src)
@@ -148,8 +149,8 @@ Location *CodeGenerator::GenACall(Location *fnAddr, bool fnHasReturnValue)
   code.push_back(new ACall(fnAddr, result));
   return result;
 }
- 
- 
+
+
 static struct _builtin {
   const char *label;
   int numArgs;
@@ -206,5 +207,3 @@ void CodeGenerator::DoFinalCodeGen()
     }
   }
 }
-
-

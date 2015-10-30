@@ -30,7 +30,7 @@
 
 #include <deque>
 #include "utility.h"  // for Assert()
-  
+
 class Node;
 
 template<class Element> class List {
@@ -67,17 +67,20 @@ template<class Element> class List {
     void RemoveAt(int index)
 	{ Assert(index >= 0 && index < NumElements());
 	  elems.erase(elems.begin() + index); }
-          
+
        // These are some specific methods useful for lists of ast nodes
        // They will only work on lists of elements that respond to the
        // messages, but since C++ only instantiates the template if you use
-       // you can still have Lists of ints, chars*, as long as you 
+       // you can still have Lists of ints, chars*, as long as you
        // don't try to SetParentAll on that list.
     void SetParentAll(Node *p)
         { for (int i = 0; i < NumElements(); i++)
              Nth(i)->SetParent(p); }
+    void EmitForAll(){
+      for (int i = 0; i < NumElements(); i++)
+        Nth(i)->Emit();
+    }
 
 };
 
 #endif
-

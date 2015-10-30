@@ -6,6 +6,7 @@
 #include "ast_type.h"
 #include "ast_decl.h"
 #include <string.h>
+#include "codegen.h"
 
 
 
@@ -26,60 +27,146 @@ StringConstant::StringConstant(yyltype loc, const char *val) : Expr(loc) {
     value = strdup(val);
 }
 
+void This::Emit() {
+  //TBI
+  return;
+}
+
 Operator::Operator(yyltype loc, const char *tok) : Node(loc) {
     Assert(tok != NULL);
     strncpy(tokenString, tok, sizeof(tokenString));
 }
-CompoundExpr::CompoundExpr(Expr *l, Operator *o, Expr *r) 
+
+
+void Operator::Emit() {
+  //unfinished
+  return;
+}
+
+CompoundExpr::CompoundExpr(Expr *l, Operator *o, Expr *r)
   : Expr(Join(l->GetLocation(), r->GetLocation())) {
     Assert(l != NULL && o != NULL && r != NULL);
     (op=o)->SetParent(this);
-    (left=l)->SetParent(this); 
+    (left=l)->SetParent(this);
     (right=r)->SetParent(this);
 }
 
-CompoundExpr::CompoundExpr(Operator *o, Expr *r) 
+CompoundExpr::CompoundExpr(Operator *o, Expr *r)
   : Expr(Join(o->GetLocation(), r->GetLocation())) {
     Assert(o != NULL && r != NULL);
-    left = NULL; 
+    left = NULL;
     (op=o)->SetParent(this);
     (right=r)->SetParent(this);
 }
-   
-  
-ArrayAccess::ArrayAccess(yyltype loc, Expr *b, Expr *s) : LValue(loc) {
-    (base=b)->SetParent(this); 
-    (subscript=s)->SetParent(this);
+
+
+/*
+  void CompoundExpr::Emit() {
+  if(left){
+  left->Emit();
+  }
+  op->Emit();
+  right->Emit();
+  }
+*/
+void AssignExpr::Emit() {
+  left->Emit();
+  op->Emit();
+  right->Emit();
+  //GENERATOR.GenLabel(GENERATOR.NewLabel());
+  //Location * left = GENERATOR.GenLoadLabel();
+  //GenAssign(left, right);
 }
-     
-FieldAccess::FieldAccess(Expr *b, Identifier *f) 
+void LogicalExpr::Emit() {
+  //TBI
+  return;
+}
+void EqualityExpr::Emit() {
+  //TBI
+  return;
+}
+
+void ArithmeticExpr::Emit() {
+  //TBI
+  return;
+}
+
+void RelationalExpr::Emit() {
+  //TBI
+  return;
+}
+
+ArrayAccess::ArrayAccess(yyltype loc, Expr *b, Expr *s) : LValue(loc) {
+  (base=b)->SetParent(this);
+  (subscript=s)->SetParent(this);
+}
+
+void ArrayAccess::Emit() {
+  base->Emit();
+  subscript->Emit();
+}
+
+FieldAccess::FieldAccess(Expr *b, Identifier *f)
   : LValue(b? Join(b->GetLocation(), f->GetLocation()) : *f->GetLocation()) {
-    Assert(f != NULL); // b can be be NULL (just means no explicit base)
-    base = b; 
-    if (base) base->SetParent(this); 
-    (field=f)->SetParent(this);
+  Assert(f != NULL); // b can be be NULL (just means no explicit base)
+  base = b;
+  if (base) base->SetParent(this);
+  (field=f)->SetParent(this);
+}
+
+void FieldAccess::Emit() {
+  if(base){
+    base->Emit();
+  }
+  field->Emit();
 }
 
 
 Call::Call(yyltype loc, Expr *b, Identifier *f, List<Expr*> *a) : Expr(loc)  {
-    Assert(f != NULL && a != NULL); // b can be be NULL (just means no explicit base)
-    base = b;
-    if (base) base->SetParent(this);
-    (field=f)->SetParent(this);
-    (actuals=a)->SetParentAll(this);
+  Assert(f != NULL && a != NULL); // b can be be NULL (just means no explicit base)
+  base = b;
+  if (base) base->SetParent(this);
+  (field=f)->SetParent(this);
+  (actuals=a)->SetParentAll(this);
 }
- 
 
-NewExpr::NewExpr(yyltype loc, NamedType *c) : Expr(loc) { 
+void Call::Emit() {
+  if(base){
+    base->Emit();
+  }
+  field->Emit();
+  actuals->EmitForAll();
+}
+
+
+NewExpr::NewExpr(yyltype loc, NamedType *c) : Expr(loc) {
   Assert(c != NULL);
   (cType=c)->SetParent(this);
 }
 
-
-NewArrayExpr::NewArrayExpr(yyltype loc, Expr *sz, Type *et) : Expr(loc) {
-    Assert(sz != NULL && et != NULL);
-    (size=sz)->SetParent(this); 
-    (elemType=et)->SetParent(this);
+void NewExpr::Emit() {
+  cType->Emit();
 }
 
-       
+
+NewArrayExpr::NewArrayExpr(yyltype loc, Expr *sz, Type *et) : Expr(loc) {
+  Assert(sz != NULL && et != NULL);
+  (size=sz)->SetParent(this);
+  (elemType=et)->SetParent(this);
+}
+
+void NewArrayExpr::Emit() {
+  size->Emit();
+  elemType->Emit();
+}
+
+
+void ReadIntegerExpr::Emit() {
+  //TBI
+  return;
+}
+
+void ReadLineExpr::Emit() {
+  //TBI
+  return;
+}

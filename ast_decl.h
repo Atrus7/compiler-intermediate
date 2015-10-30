@@ -5,7 +5,7 @@
  * specialized for declarations of variables, functions, classes,
  * and interfaces.
  *
- * pp5: You will need to extend the Decl classes to implement 
+ * pp5: You will need to extend the Decl classes to implement
  * code generation for declarations.
  */
 
@@ -20,26 +20,27 @@ class NamedType;
 class Identifier;
 class Stmt;
 
-class Decl : public Node 
+class Decl : public Node
 {
   protected:
     Identifier *id;
-  
+
   public:
     Decl(Identifier *name);
     friend std::ostream& operator<<(std::ostream& out, Decl *d) { return out << d->id; }
 };
 
-class VarDecl : public Decl 
+class VarDecl : public Decl
 {
   protected:
     Type *type;
-    
+
   public:
     VarDecl(Identifier *name, Type *type);
+    void Emit();
 };
 
-class ClassDecl : public Decl 
+class ClassDecl : public Decl
 {
   protected:
     List<Decl*> *members;
@@ -47,29 +48,32 @@ class ClassDecl : public Decl
     List<NamedType*> *implements;
 
   public:
-    ClassDecl(Identifier *name, NamedType *extends, 
+    ClassDecl(Identifier *name, NamedType *extends,
               List<NamedType*> *implements, List<Decl*> *members);
+    void Emit();
 };
 
-class InterfaceDecl : public Decl 
+class InterfaceDecl : public Decl
 {
   protected:
     List<Decl*> *members;
-    
+
   public:
     InterfaceDecl(Identifier *name, List<Decl*> *members);
+    void Emit();
 };
 
-class FnDecl : public Decl 
+class FnDecl : public Decl
 {
   protected:
     List<VarDecl*> *formals;
     Type *returnType;
     Stmt *body;
-    
+
   public:
     FnDecl(Identifier *name, Type *returnType, List<VarDecl*> *formals);
     void SetFunctionBody(Stmt *b);
+    void Emit();
 };
 
 #endif
