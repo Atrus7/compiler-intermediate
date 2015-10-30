@@ -70,6 +70,7 @@ class Identifier : public Node
  public:
   Identifier(yyltype loc, const char *name);
   friend std::ostream& operator<<(std::ostream& out, Identifier *id) { return out << id->name; }
+  char *GetName(){ return name; }
 };
 
 

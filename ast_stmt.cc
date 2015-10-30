@@ -7,6 +7,7 @@
 #include "ast_decl.h"
 #include "ast_expr.h"
 #include "codegen.h"
+#include "symbol_table.h"
 
 
 Program::Program(List<Decl*> *d) {
@@ -28,6 +29,7 @@ void Program::Emit() {
      *      which makes for a great use of inheritance and
      *      polymorphism in the node classes.
      */
+  SymbolTable *global = new SymbolTable();
   decls->EmitForAll();
   GENERATOR.DoFinalCodeGen();
 
