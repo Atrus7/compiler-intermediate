@@ -13,6 +13,7 @@
 #define _H_ast_decl
 
 #include "ast.h"
+#include "symbol_table.h"
 #include "list.h"
 
 class Type;
@@ -46,6 +47,7 @@ class ClassDecl : public Decl
     List<Decl*> *members;
     NamedType *extends;
     List<NamedType*> *implements;
+    SymbolTable *class_table;
 
   public:
     ClassDecl(Identifier *name, NamedType *extends,

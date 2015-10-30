@@ -5,6 +5,8 @@
 #include "ast_decl.h"
 #include "ast_type.h"
 #include "ast_stmt.h"
+#include "symbol_table.h"
+#include <cstring>
 
 
 Decl::Decl(Identifier *n) : Node(*n->GetLocation()) {
@@ -19,35 +21,42 @@ VarDecl::VarDecl(Identifier *n, Type *t) : Decl(n) {
 }
 
 void VarDecl::Emit() {
+  char * var_name = id->GetName();
+  GENERATOR.GenLabel(var_name);
+  Location * declared_variable = GENERATOR.GenLoadLabel(var_name);
+  SymbolTable::active->Add(declared_variable);
   id->Emit();
   type->Emit();
-  char * temp = GENERATOR.NewLabel();
-  GENERATOR.GenLabel(temp);
-  Location * declared_variable = GENERATOR.GenLoadLabel(temp);
-
-  SymbolTable.add(declared_variable);
 }
 
-
 ClassDecl::ClassDecl(Identifier *n, NamedType *ex, List<NamedType*> *imp, List<Decl*> *m) : Decl(n) {
-    // extends can be NULL, impl & mem may be empty lists but cannot be NULL
-    Assert(n != NULL && imp != NULL && m != NULL);
-    extends = ex;
-    if (extends) extends->SetParent(this);
-    (implements=imp)->SetParentAll(this);
-    (members=m)->SetParentAll(this);
+  // extends can be NULL, impl & mem may be empty lists but cannot be NULL
+  Assert(n != NULL && imp != NULL && m != NULL);
+  extends = ex;
+  if (extends) extends->SetParent(this);
+  (implements=imp)->SetParentAll(this);
+  (members=m)->SetParentAll(this);
+  //GENERATOR
 }
 
 void ClassDecl::Emit() {
+  char * class_name = id->GetName();
+  GENERATOR.GenLabel(class_name);
+  Location * declared_variable = GENERATOR.GenLoadLabel(class_name);
+  class_table = new SymbolTable(declared_variable);
+  // Class SymbolTable should be added before we consider the members
+  SymbolTable::SwitchActive(class_table);
   id->Emit();
-  extends->Emit();
+  if(extends) extends->Emit();
+  //class_table->AddExtend(ex);
   implements->EmitForAll();
   members->EmitForAll();
+  SymbolTable::SwitchActive(class_table->GetParent());
 }
 
 InterfaceDecl::InterfaceDecl(Identifier *n, List<Decl*> *m) : Decl(n) {
-    Assert(n != NULL && m != NULL);
-    (members=m)->SetParentAll(this);
+  Assert(n != NULL && m != NULL);
+  (members=m)->SetParentAll(this);
 }
 
 void InterfaceDecl::Emit() {
@@ -57,17 +66,28 @@ void InterfaceDecl::Emit() {
 
 
 FnDecl::FnDecl(Identifier *n, Type *r, List<VarDecl*> *d) : Decl(n) {
-    Assert(n != NULL && r!= NULL && d != NULL);
-    (returnType=r)->SetParent(this);
-    (formals=d)->SetParentAll(this);
-    body = NULL;
+  Assert(n != NULL && r!= NULL && d != NULL);
+  (returnType=r)->SetParent(this);
+  (formals=d)->SetParentAll(this);
+  body = NULL;
 }
 
 void FnDecl::Emit() {
+  //reset offsets since we'll add a stack frame
+  //GENERATOR.ResetStackFrame();
+
+  char * function_name = id->GetName();
+  if(std::strcmp(function_name, "main") == 0){
+    //do main stuff
+  }
+  GENERATOR.GenLabel(function_name);
+  Location * declared_variable = GENERATOR.GenLoadLabel(function_name);
+  SymbolTable::active->Add(declared_variable);
+
   id->Emit();
-  returnType->Emit();
   formals->EmitForAll();
+  returnType->Emit();
 }
 void FnDecl::SetFunctionBody(Stmt *b) {
-    (body=b)->SetParent(this);
+  (body=b)->SetParent(this);
 }
