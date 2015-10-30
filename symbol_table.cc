@@ -1,19 +1,37 @@
 #include "symbol_table.h"
-static SymbolTable *active_symbol_table = NULL;
+SymbolTable *SymbolTable::active = NULL;
 
-SymbolTable::SymbolTable(){
-  if(active_symbol_table){ // assuming we will be able to always track the active_symbol_table
-    parent = active_symbol_table;
+SymbolTable::SymbolTable() : symbols(){
+  class_name = NULL;
+  if(active){ // assuming we will be able to always track the active
+    parent = active;
+    active = this;
   }
   else { //first symbol table will be root
-    active_symbol_table = this;
+    parent = NULL;
+    active = this;
   }
 }
 
+SymbolTable::SymbolTable(Location *l) : symbols(){
+  class_name = l;
+  if(active){ // assuming we will be able to always track the active
+    parent = active;
+    active = this;
+  }
+  else { //first symbol table will be root
+    parent = NULL;
+    active = this;
+  }
+
+}
+
+
 //SymbolTable::SymbolTable(Location *l): SymbolTable(){class_name = l;}
 Location *SymbolTable::Lookup(const char* label){
-  for (int i = 0; i < symbols.NumElements(); i++){
-    Location * symbol = symbols.Nth(i);
+  std::list<Location *>::iterator it = symbols.begin();
+    for (; it != symbols.end(); ++it){
+    Location * symbol = *it;
     if (label == symbol->GetName()){
       return symbol;
     }
@@ -29,7 +47,7 @@ Location *SymbolTable::Lookup(const char* label){
 void SymbolTable::Add(Location *loc){
   Assert(loc);
   if(Lookup(loc->GetName())){
-    symbols.Append(loc);
+    symbols.push_back(loc);
   }
 }
 
@@ -43,4 +61,8 @@ SymbolTable *SymbolTable::FindClassTable(char * type_name){
   else{
     return NULL;
   }
+}
+
+void SymbolTable::SwitchActive(SymbolTable * new_active) {
+  active = new_active;
 }

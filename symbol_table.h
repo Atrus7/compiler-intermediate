@@ -17,17 +17,20 @@
 
 class SymbolTable {
  protected:
-  static SymbolTable *active_symbol_table;
-  SymbolTable * parent = NULL;
-  Location * class_name = NULL;
-  List<Location *> symbols;
+  SymbolTable * parent;
+  Location * class_name;
+  std::list<Location *> symbols;
 
  public:
+  static SymbolTable *active;
   SymbolTable();
-  SymbolTable(Location *l): SymbolTable(){class_name = l;}
+  SymbolTable(Location *l);
+  static void SwitchActive(SymbolTable * new_active);
   Location *Lookup(const char * label);
   void Add(Location *loc);
   SymbolTable *FindClassTable(char * type_name);
-}
+  Location * GetClassName() {return class_name;}
+  SymbolTable *GetParent() {return parent;}
+};
 
 #endif
