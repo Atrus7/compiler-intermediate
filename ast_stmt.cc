@@ -101,7 +101,20 @@ PrintStmt::PrintStmt(List<Expr*> *a) {
     (args=a)->SetParentAll(this);
 }
 Location * PrintStmt::Emit() {
+  for (int i = 0; i < args->NumElements(); i++){
+    Expr * param_expr = args->Nth(i);
+    Location * param_loc = param_expr->Emit();
+    Type *type = param_expr->GetType();
+    if(type == Type::intType || type == Type::boolType){
+      GENERATOR.GenBuiltInCall(PrintInt, param_loc, NULL);
+    }
+    else if(type == Type::stringType){
+      GENERATOR.GenBuiltInCall(PrintString, param_loc, NULL);
+    }
+
+  }
+
   args->EmitForAll();
-  return NULL;
   //GENERATOR.GenBuiltInCall(ReadInteger, NULL, NULL);
+  return NULL;
 }

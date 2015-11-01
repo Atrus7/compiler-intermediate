@@ -23,9 +23,13 @@ class Type; // for NewArray
 
 class Expr : public Stmt
 {
+ protected:
+  Type * type;
   public:
-    Expr(yyltype loc) : Stmt(loc) {}
-    Expr() : Stmt() {}
+  Expr(yyltype loc);
+  Expr();
+    virtual Type * GetType(){return type;}
+
 };
 
 /* This node type is used for those places where an expression is optional.
