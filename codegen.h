@@ -44,11 +44,12 @@ class CodeGenerator {
                      OffsetToFirstParam = 4,
                      OffsetToFirstGlobal = 0;
 
-    static int OffsetToLocal;
+    static int fp, gp;
 
     static const int VarSize = 4;
 
     static Location* ThisPtr;
+    static int nextTempNum;
 
     CodeGenerator();
 

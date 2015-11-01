@@ -12,7 +12,9 @@
 #include "symbol_table.h"
 
 Location* CodeGenerator::ThisPtr= new Location(fpRelative, 4, "this");
-int CodeGenerator::OffsetToLocal = CodeGenerator::OffsetToFirstLocal;
+int CodeGenerator::nextTempNum = 0;
+int CodeGenerator::fp = CodeGenerator::OffsetToFirstLocal;
+int CodeGenerator::gp = CodeGenerator::OffsetToFirstGlobal;
 
 CodeGenerator::CodeGenerator()
 {
@@ -37,12 +39,18 @@ char *CodeGenerator::NewLabel()
 
 Location *CodeGenerator::GenTempVar()
 {
-  static int nextTempNum;
   char temp[10];
   sprintf(temp, "_tmp%d", nextTempNum++);
-  Segment current_segment = SymbolTable::active->GetClassName()->GetSegment();
-  Location * result = new Location(current_segment, OffsetToLocal, temp);
-  OffsetToLocal -= 4;
+  Segment current_segment = (SymbolTable::active->GetClassName())? fpRelative : gpRelative;
+  Location * result;
+  if(current_segment == fpRelative){
+    result = new Location(current_segment, fp, temp);
+    fp -= 4;
+  }
+  else {
+    result = new Location(current_segment, gp, temp);
+    gp += 4;
+  }
   /* pp5: need to create variable in proper location
      in stack frame for use as temporary. Until you
      do that, the assert below will always fail to remind
@@ -53,7 +61,7 @@ Location *CodeGenerator::GenTempVar()
 }
 
 void CodeGenerator::ResetStackFrame() {
-  OffsetToLocal = OffsetToFirstLocal;
+  fp = OffsetToFirstLocal;
 }
 
 
@@ -99,7 +107,7 @@ void CodeGenerator::GenStore(Location *dst,Location *src, int offset)
 
 
 Location *CodeGenerator::GenBinaryOp(const char *opName, Location *op1,
-						     Location *op2)
+                                     Location *op2)
 {
   Location *result = GenTempVar();
   code.push_back(new BinaryOp(BinaryOp::OpCodeForName(opName), result, op1, op2));
@@ -172,14 +180,14 @@ static struct _builtin {
   int numArgs;
   bool hasReturn;
 } builtins[] =
- {{"_Alloc", 1, true},
-  {"_ReadLine", 0, true},
-  {"_ReadInteger", 0, true},
-  {"_StringEqual", 2, true},
-  {"_PrintInt", 1, false},
-  {"_PrintString", 1, false},
-  {"_PrintBool", 1, false},
-  {"_Halt", 0, false}};
+  {{"_Alloc", 1, true},
+   {"_ReadLine", 0, true},
+   {"_ReadInteger", 0, true},
+   {"_StringEqual", 2, true},
+   {"_PrintInt", 1, false},
+   {"_PrintString", 1, false},
+   {"_PrintBool", 1, false},
+   {"_Halt", 0, false}};
 
 Location *CodeGenerator::GenBuiltInCall(BuiltIn bn,Location *arg1, Location *arg2)
 {
@@ -188,10 +196,10 @@ Location *CodeGenerator::GenBuiltInCall(BuiltIn bn,Location *arg1, Location *arg
   Location *result = NULL;
 
   if (b->hasReturn) result = GenTempVar();
-                // verify appropriate number of non-NULL arguments given
+  // verify appropriate number of non-NULL arguments given
   Assert((b->numArgs == 0 && !arg1 && !arg2)
-	|| (b->numArgs == 1 && arg1 && !arg2)
-	|| (b->numArgs == 2 && arg1 && arg2));
+         || (b->numArgs == 1 && arg1 && !arg2)
+         || (b->numArgs == 2 && arg1 && arg2));
   if (arg2) code.push_back(new PushParam(arg2));
   if (arg1) code.push_back(new PushParam(arg1));
   code.push_back(new LCall(b->label, result));
@@ -213,9 +221,9 @@ void CodeGenerator::DoFinalCodeGen()
     for (p= code.begin(); p != code.end(); ++p) {
       (*p)->Print();
     }
-   }  else {
-     Mips mips;
-     mips.EmitPreamble();
+  }  else {
+    Mips mips;
+    mips.EmitPreamble();
 
     std::list<Instruction*>::iterator p;
     for (p= code.begin(); p != code.end(); ++p) {
