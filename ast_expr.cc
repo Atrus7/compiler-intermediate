@@ -17,6 +17,11 @@ IntConstant::IntConstant(yyltype loc, int val) : Expr(loc) {
 DoubleConstant::DoubleConstant(yyltype loc, double val) : Expr(loc) {
     value = val;
 }
+Location * DoubleConstant::Emit() {
+  //error for p5
+  ReportError::DoubleInGenP5();
+  return NULL;
+}
 
 BoolConstant::BoolConstant(yyltype loc, bool val) : Expr(loc) {
     value = val;

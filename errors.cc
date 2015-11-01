@@ -26,8 +26,8 @@ void ReportError::UnderlineErrorInLine(const char *line, yyltype *pos) {
     cerr << endl;
 }
 
- 
- 
+
+
 void ReportError::OutputError(yyltype *loc, string msg) {
     numErrors++;
     fflush(stdout); // make sure any buffered text has been output
@@ -43,7 +43,7 @@ void ReportError::OutputError(yyltype *loc, string msg) {
 void ReportError::Formatted(yyltype *loc, const char *format, ...) {
     va_list args;
     char errbuf[2048];
-    
+
     va_start(args, format);
     vsprintf(errbuf,format, args);
     va_end(args);
@@ -79,11 +79,11 @@ void ReportError::UnrecogChar(yyltype *loc, char ch) {
 
 void ReportError::DeclConflict(Decl *decl, Decl *prevDecl) {
     stringstream s;
-    s << "Declaration of '" << decl << "' here conflicts with declaration on line " 
+    s << "Declaration of '" << decl << "' here conflicts with declaration on line "
       << prevDecl->GetLocation()->first_line;
     OutputError(decl->GetLocation(), s.str());
 }
-  
+
 void ReportError::OverrideMismatch(Decl *fnDecl) {
     stringstream s;
     s << "Method '" << fnDecl << "' must match inherited type signature";
@@ -109,7 +109,7 @@ void ReportError::IncompatibleOperands(Operator *op, Type *lhs, Type *rhs) {
     s << "Incompatible operands: " << lhs << " " << op << " " << rhs;
     OutputError(op->GetLocation(), s.str());
 }
-     
+
 void ReportError::IncompatibleOperand(Operator *op, Type *rhs) {
     stringstream s;
     s << "Incompatible operand: " << op << " " << rhs;
@@ -134,7 +134,7 @@ void ReportError::NewArraySizeNotInteger(Expr *sizeExpr) {
 
 void ReportError::NumArgsMismatch(Identifier *fnIdent, int numExpected, int numGiven) {
     stringstream s;
-    s << "Function '"<< fnIdent << "' expects " << numExpected << " argument" << (numExpected==1?"":"s") 
+    s << "Function '"<< fnIdent << "' expects " << numExpected << " argument" << (numExpected==1?"":"s")
       << " but " << numGiven << " given";
     OutputError(fnIdent->GetLocation(), s.str());
 }
@@ -156,7 +156,7 @@ void ReportError::FieldNotFoundInBase(Identifier *field, Type *base) {
     s << base << " has no such field '" << field <<"'";
     OutputError(field->GetLocation(), s.str());
 }
-     
+
 void ReportError::InaccessibleField(Identifier *field, Type *base) {
     stringstream s;
     s  << base << " field '" << field << "' only accessible within class scope";
@@ -177,18 +177,23 @@ void ReportError::TestNotBoolean(Expr *expr) {
 void ReportError::BreakOutsideLoop(BreakStmt *bStmt) {
     OutputError(bStmt->GetLocation(), "break is only allowed inside a loop");
 }
-  
+
 void ReportError::NoMainFound() {
     OutputError(NULL, "Linker: function 'main' not defined");
 }
-  
+
+
+void ReportError::DoubleInGenP5() {
+    OutputError(NULL, "P5 is not supposed to be tested using doubles");
+}
+
 /* Function: yyerror()
  * -------------------
  * Standard error-reporting function expected by yacc. Our version merely
  * just calls into the error reporter above, passing the location of
  * the last token read. If you want to suppress the ordinary "parse error"
  * message from yacc, you can implement yyerror to do nothing and
- * then call ReportError::Formatted yourself with a more descriptive 
+ * then call ReportError::Formatted yourself with a more descriptive
  * message.
  */
 void yyerror(const char *msg) {
