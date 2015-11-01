@@ -26,10 +26,13 @@ class SymbolTable {
   SymbolTable();
   SymbolTable(Location *l);
   static void SwitchActive(SymbolTable * new_active);
+  //prints symbols in table
+  void DebugSymbolTable();
   Location *Lookup(const char * label);
   void Add(Location *loc);
   SymbolTable *FindClassTable(char * type_name);
-  Location * GetClassName() {return class_name;}
+  Location * GetClass() {return class_name;}
+  const char * GetClassName() {if(class_name != NULL) return class_name->GetName(); else return "";}
   SymbolTable *GetParent() {return parent;}
 };
 

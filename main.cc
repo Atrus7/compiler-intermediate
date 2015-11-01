@@ -3,7 +3,7 @@
  * This file defines the main() routine for the program and not much else.
  * You should not need to modify this file.
  */
- 
+
 #include <string.h>
 #include <stdio.h>
 #include "utility.h"
@@ -17,15 +17,15 @@
  * on any debugging flags requested by the user when invoking the program.
  * InitScanner() is used to set up the scanner.
  * InitParser() is used to set up the parser. The call to yyparse() will
- * attempt to parse a complete program from the input. 
+ * attempt to parse a complete program from the input.
  */
 int main(int argc, char *argv[])
 {
+    SetDebugForKey("dev", true);
     ParseCommandLine(argc, argv);
-  
+
     InitScanner();
     InitParser();
     yyparse();
     return (ReportError::NumErrors() == 0? 0 : -1);
 }
-

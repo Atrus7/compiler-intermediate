@@ -46,7 +46,7 @@ Location *SymbolTable::Lookup(const char* label){
 
 void SymbolTable::Add(Location *loc){
   Assert(loc);
-  if(Lookup(loc->GetName())){
+  if(!Lookup(loc->GetName())){
     symbols.push_back(loc);
   }
 }
@@ -65,4 +65,12 @@ SymbolTable *SymbolTable::FindClassTable(char * type_name){
 
 void SymbolTable::SwitchActive(SymbolTable * new_active) {
   active = new_active;
+}
+
+void SymbolTable::DebugSymbolTable(){
+  std::list<Location *>::iterator it = symbols.begin();
+  for (; it != symbols.end(); ++it){
+    Location * symbol = *it;
+    PrintDebug("dev", symbol->GetName());
+  }
 }
