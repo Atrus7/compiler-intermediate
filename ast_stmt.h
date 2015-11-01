@@ -28,7 +28,7 @@ class Program : public Node
   public:
      Program(List<Decl*> *declList);
      void Check();
-     void Emit();
+     Location * Emit();
 };
 
 class Stmt : public Node
@@ -46,7 +46,7 @@ class StmtBlock : public Stmt
 
   public:
     StmtBlock(List<VarDecl*> *variableDeclarations, List<Stmt*> *statements);
-    void Emit();
+    Location * Emit();
 };
 
 
@@ -58,7 +58,7 @@ class ConditionalStmt : public Stmt
 
   public:
     ConditionalStmt(Expr *testExpr, Stmt *body);
-    void Emit();
+    Location * Emit();
 };
 
 class LoopStmt : public ConditionalStmt
@@ -66,7 +66,7 @@ class LoopStmt : public ConditionalStmt
   public:
     LoopStmt(Expr *testExpr, Stmt *body)
             : ConditionalStmt(testExpr, body) {}
-  //void Emit();
+  Location *Emit();
 };
 
 class ForStmt : public LoopStmt
@@ -76,7 +76,7 @@ class ForStmt : public LoopStmt
 
   public:
     ForStmt(Expr *init, Expr *test, Expr *step, Stmt *body);
-    void Emit();
+    Location * Emit();
 };
 
 class WhileStmt : public LoopStmt
@@ -92,7 +92,7 @@ class IfStmt : public ConditionalStmt
 
   public:
     IfStmt(Expr *test, Stmt *thenBody, Stmt *elseBody);
-    void Emit();
+    Location * Emit();
 };
 
 class BreakStmt : public Stmt
@@ -108,7 +108,7 @@ class ReturnStmt : public Stmt
 
   public:
     ReturnStmt(yyltype loc, Expr *expr);
-    void Emit();
+    Location * Emit();
 };
 
 class PrintStmt : public Stmt
@@ -118,7 +118,7 @@ class PrintStmt : public Stmt
 
   public:
     PrintStmt(List<Expr*> *arguments);
-    void Emit();
+    Location * Emit();
 };
 
 

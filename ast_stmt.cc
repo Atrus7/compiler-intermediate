@@ -21,7 +21,7 @@ void Program::Check() {
      * semantically-invalid programs.
      */
 }
-void Program::Emit() {
+Location * Program::Emit() {
     /* pp5: here is where the code generation is kicked off.
      *      The general idea is perform a tree traversal of the
      *      entire program, generating instructions as you go.
@@ -32,6 +32,7 @@ void Program::Emit() {
   SymbolTable *global = new SymbolTable();
   decls->EmitForAll();
   GENERATOR.DoFinalCodeGen();
+  return NULL;
 
 }
 
@@ -40,8 +41,10 @@ StmtBlock::StmtBlock(List<VarDecl*> *d, List<Stmt*> *s) {
     (decls=d)->SetParentAll(this);
     (stmts=s)->SetParentAll(this);
 }
-void StmtBlock::Emit() {
+Location * StmtBlock::Emit() {
   decls->EmitForAll();
+  stmts->EmitForAll();
+  return NULL;
 }
 
 ConditionalStmt::ConditionalStmt(Expr *t, Stmt *b) {
@@ -50,9 +53,10 @@ ConditionalStmt::ConditionalStmt(Expr *t, Stmt *b) {
     (body=b)->SetParent(this);
 }
 
-void ConditionalStmt::Emit() {
+Location * ConditionalStmt::Emit() {
   test->Emit();
   body->Emit();
+  return NULL;
 }
 
 ForStmt::ForStmt(Expr *i, Expr *t, Expr *s, Stmt *b): LoopStmt(t, b) {
@@ -60,11 +64,15 @@ ForStmt::ForStmt(Expr *i, Expr *t, Expr *s, Stmt *b): LoopStmt(t, b) {
     (init=i)->SetParent(this);
     (step=s)->SetParent(this);
 }
+Location * LoopStmt::Emit() {
+  return NULL;
+}
 
-void ForStmt::Emit() {
+Location * ForStmt::Emit() {
   LoopStmt::Emit();
   init->Emit();
   step->Emit();
+  return NULL;
 }
 
 IfStmt::IfStmt(Expr *t, Stmt *tb, Stmt *eb): ConditionalStmt(t, tb) {
@@ -73,23 +81,27 @@ IfStmt::IfStmt(Expr *t, Stmt *tb, Stmt *eb): ConditionalStmt(t, tb) {
     if (elseBody) elseBody->SetParent(this);
 }
 
-void IfStmt::Emit() {
+Location * IfStmt::Emit() {
   ConditionalStmt::Emit();
   elseBody->Emit();
+  return NULL;
 }
 
 ReturnStmt::ReturnStmt(yyltype loc, Expr *e) : Stmt(loc) {
     Assert(e != NULL);
     (expr=e)->SetParent(this);
 }
-void ReturnStmt::Emit() {
+Location * ReturnStmt::Emit() {
   expr->Emit();
+  return NULL;
 }
 
 PrintStmt::PrintStmt(List<Expr*> *a) {
     Assert(a != NULL);
     (args=a)->SetParentAll(this);
 }
-void PrintStmt::Emit() {
+Location * PrintStmt::Emit() {
   args->EmitForAll();
+  return NULL;
+  //GENERATOR.GenBuiltInCall(ReadInteger, NULL, NULL);
 }

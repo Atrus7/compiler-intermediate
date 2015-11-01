@@ -49,7 +49,11 @@ class Node
   yyltype *GetLocation()   { return location; }
   void SetParent(Node *p)  { parent = p; }
   Node *GetParent()        { return parent; }
-  virtual void Emit() {return;} //Do nothing
+
+  /*
+    we need to return a Location pointer to resolve certain expr, such as assignexpr.
+   */
+  virtual Location * Emit() {return NULL;} //Do nothing
   Segment GetSegment(){
     if(parent == NULL){
       return gpRelative;

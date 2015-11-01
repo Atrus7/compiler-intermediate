@@ -43,6 +43,7 @@ class IntConstant : public Expr
 
   public:
     IntConstant(yyltype loc, int val);
+    Location * Emit();
 };
 
 class DoubleConstant : public Expr
@@ -52,6 +53,7 @@ class DoubleConstant : public Expr
 
   public:
     DoubleConstant(yyltype loc, double val);
+    Location * Emit();
 };
 
 class BoolConstant : public Expr
@@ -61,6 +63,7 @@ class BoolConstant : public Expr
 
   public:
     BoolConstant(yyltype loc, bool val);
+    Location * Emit();
 };
 
 class StringConstant : public Expr
@@ -70,12 +73,14 @@ class StringConstant : public Expr
 
   public:
     StringConstant(yyltype loc, const char *val);
+    Location * Emit();
 };
 
 class NullConstant: public Expr
 {
   public:
     NullConstant(yyltype loc) : Expr(loc) {}
+  //emit will inherit and just return NULL
 };
 
 class Operator : public Node
@@ -86,7 +91,7 @@ class Operator : public Node
   public:
     Operator(yyltype loc, const char *tok);
     friend std::ostream& operator<<(std::ostream& out, Operator *o) { return out << o->tokenString; }
-    void Emit();
+    Location * Emit();
  };
 
 class CompoundExpr : public Expr
@@ -105,14 +110,14 @@ class ArithmeticExpr : public CompoundExpr
   public:
     ArithmeticExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
     ArithmeticExpr(Operator *op, Expr *rhs) : CompoundExpr(op,rhs) {}
-    void Emit();
+    Location * Emit();
 };
 
 class RelationalExpr : public CompoundExpr
 {
   public:
     RelationalExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
-    void Emit();
+    Location * Emit();
 };
 
 class EqualityExpr : public CompoundExpr
@@ -120,7 +125,7 @@ class EqualityExpr : public CompoundExpr
   public:
     EqualityExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
     const char *GetPrintNameForNode() { return "EqualityExpr"; }
-    void Emit();
+    Location * Emit();
 };
 
 class LogicalExpr : public CompoundExpr
@@ -129,7 +134,7 @@ class LogicalExpr : public CompoundExpr
     LogicalExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
     LogicalExpr(Operator *op, Expr *rhs) : CompoundExpr(op,rhs) {}
     const char *GetPrintNameForNode() { return "LogicalExpr"; }
-    void Emit();
+    Location * Emit();
 };
 
 class AssignExpr : public CompoundExpr
@@ -137,20 +142,21 @@ class AssignExpr : public CompoundExpr
   public:
     AssignExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
     const char *GetPrintNameForNode() { return "AssignExpr"; }
-    void Emit();
+    Location * Emit();
 };
 
 class LValue : public Expr
 {
   public:
     LValue(yyltype loc) : Expr(loc) {}
+  //Identifier
 };
 
 class This : public Expr
 {
   public:
     This(yyltype loc) : Expr(loc) {}
-    void Emit();
+    Location * Emit();
 };
 
 class ArrayAccess : public LValue
@@ -160,7 +166,7 @@ class ArrayAccess : public LValue
 
   public:
     ArrayAccess(yyltype loc, Expr *base, Expr *subscript);
-    void Emit();
+    Location * Emit();
 };
 
 /* Note that field access is used both for qualified names
@@ -176,7 +182,8 @@ class FieldAccess : public LValue
 
   public:
     FieldAccess(Expr *base, Identifier *field); //ok to pass NULL base
-    void Emit();
+    Location * Emit();
+    char *Resolve();
 };
 
 /* Like field access, call is used both for qualified base.field()
@@ -192,7 +199,7 @@ class Call : public Expr
 
   public:
     Call(yyltype loc, Expr *base, Identifier *field, List<Expr*> *args);
-    void Emit();
+    Location * Emit();
 };
 
 class NewExpr : public Expr
@@ -202,7 +209,7 @@ class NewExpr : public Expr
 
   public:
     NewExpr(yyltype loc, NamedType *clsType);
-    void Emit();
+    Location * Emit();
 };
 
 class NewArrayExpr : public Expr
@@ -213,21 +220,21 @@ class NewArrayExpr : public Expr
 
   public:
     NewArrayExpr(yyltype loc, Expr *sizeExpr, Type *elemType);
-    void Emit();
+    Location * Emit();
 };
 
 class ReadIntegerExpr : public Expr
 {
   public:
     ReadIntegerExpr(yyltype loc) : Expr(loc) {}
-    void Emit();
+    Location * Emit();
 };
 
 class ReadLineExpr : public Expr
 {
   public:
     ReadLineExpr(yyltype loc) : Expr (loc) {}
-    void Emit();
+    Location * Emit();
 };
 
 

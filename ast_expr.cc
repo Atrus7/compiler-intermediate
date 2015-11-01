@@ -7,11 +7,14 @@
 #include "ast_decl.h"
 #include <string.h>
 #include "codegen.h"
-
+#include "errors.h"
 
 
 IntConstant::IntConstant(yyltype loc, int val) : Expr(loc) {
     value = val;
+}
+Location * IntConstant::Emit() {
+  return GENERATOR.GenLoadConstant(value);
 }
 
 DoubleConstant::DoubleConstant(yyltype loc, double val) : Expr(loc) {
@@ -26,15 +29,23 @@ Location * DoubleConstant::Emit() {
 BoolConstant::BoolConstant(yyltype loc, bool val) : Expr(loc) {
     value = val;
 }
+Location * BoolConstant::Emit() {
+  int bool_casted_to_int = (value != 0)? 1 : 0;
+  return GENERATOR.GenLoadConstant(bool_casted_to_int);
+}
 
 StringConstant::StringConstant(yyltype loc, const char *val) : Expr(loc) {
     Assert(val != NULL);
     value = strdup(val);
 }
 
-void This::Emit() {
+Location * StringConstant::Emit() {
+  return GENERATOR.GenLoadConstant(value);
+}
+
+Location * This::Emit() {
   //TBI
-  return;
+  return NULL;
 }
 
 Operator::Operator(yyltype loc, const char *tok) : Node(loc) {
@@ -42,10 +53,9 @@ Operator::Operator(yyltype loc, const char *tok) : Node(loc) {
     strncpy(tokenString, tok, sizeof(tokenString));
 }
 
-
-void Operator::Emit() {
+Location * Operator::Emit() {
   //unfinished
-  return;
+  return NULL;
 }
 
 CompoundExpr::CompoundExpr(Expr *l, Operator *o, Expr *r)
@@ -64,41 +74,51 @@ CompoundExpr::CompoundExpr(Operator *o, Expr *r)
     (right=r)->SetParent(this);
 }
 
-
-/*
-  void CompoundExpr::Emit() {
-  if(left){
-  left->Emit();
-  }
-  op->Emit();
+Location * AssignExpr::Emit() {
   right->Emit();
+  //Assert("" == left->GetLocation()->text);
+  char * text;
+  if(FieldAccess *var = dynamic_cast<FieldAccess*>(left)){
+    text = var->Resolve();
   }
-*/
-void AssignExpr::Emit() {
-  left->Emit();
-  op->Emit();
-  right->Emit();
-  //GENERATOR.GenLabel(GENERATOR.NewLabel());
-  //Location * left = GENERATOR.GenLoadLabel();
-  //GenAssign(left, right);
+  else{
+    PrintDebug("dev", "Not FieldAccess");
+    return NULL;
+  }
+  PrintDebug("dev", "here");
+  PrintDebug("dev", text);
+  SymbolTable::active->DebugSymbolTable();
+  PrintDebug("dev", SymbolTable::active->GetClassName());
+  Location * lhs = GENERATOR.GenLoadLabel(text);
+  Assert(lhs); //should always be valid in P5...
+
+  //get last temp, it will be the rhs calculated...
+  char temp [10];
+  sprintf(temp, "_tmp%d", CodeGenerator::nextTempNum-1);
+  Location *rhs = new Location(fpRelative, CodeGenerator::fp - 4, temp);
+  //Location * rhs = Lookup()
+  //Location * left =
+  //GENERATOR.GenLoadLabel();
+  GENERATOR.GenAssign(lhs, rhs);
+  return NULL;
 }
-void LogicalExpr::Emit() {
+Location * LogicalExpr::Emit() {
   //TBI
-  return;
+  return NULL;
 }
-void EqualityExpr::Emit() {
+Location * EqualityExpr::Emit() {
   //TBI
-  return;
+  return NULL;
 }
 
-void ArithmeticExpr::Emit() {
+Location * ArithmeticExpr::Emit() {
   //TBI
-  return;
+  return NULL;
 }
 
-void RelationalExpr::Emit() {
+Location * RelationalExpr::Emit() {
   //TBI
-  return;
+  return NULL;
 }
 
 ArrayAccess::ArrayAccess(yyltype loc, Expr *b, Expr *s) : LValue(loc) {
@@ -106,9 +126,10 @@ ArrayAccess::ArrayAccess(yyltype loc, Expr *b, Expr *s) : LValue(loc) {
   (subscript=s)->SetParent(this);
 }
 
-void ArrayAccess::Emit() {
+Location * ArrayAccess::Emit() {
   base->Emit();
   subscript->Emit();
+  return NULL;
 }
 
 FieldAccess::FieldAccess(Expr *b, Identifier *f)
@@ -119,11 +140,21 @@ FieldAccess::FieldAccess(Expr *b, Identifier *f)
   (field=f)->SetParent(this);
 }
 
-void FieldAccess::Emit() {
+//TODO: Resolve bases and arrays
+char *FieldAccess::Resolve(){
+  //if(base){
+  //base->
+  //}
+  return field->GetName();
+
+}
+
+Location * FieldAccess::Emit() {
   if(base){
     base->Emit();
   }
   field->Emit();
+  return NULL;
 }
 
 
@@ -135,12 +166,13 @@ Call::Call(yyltype loc, Expr *b, Identifier *f, List<Expr*> *a) : Expr(loc)  {
   (actuals=a)->SetParentAll(this);
 }
 
-void Call::Emit() {
+Location * Call::Emit() {
   if(base){
     base->Emit();
   }
   field->Emit();
   actuals->EmitForAll();
+  return NULL;
 }
 
 
@@ -149,8 +181,9 @@ NewExpr::NewExpr(yyltype loc, NamedType *c) : Expr(loc) {
   (cType=c)->SetParent(this);
 }
 
-void NewExpr::Emit() {
+Location * NewExpr::Emit() {
   cType->Emit();
+  return NULL;
 }
 
 
@@ -160,18 +193,19 @@ NewArrayExpr::NewArrayExpr(yyltype loc, Expr *sz, Type *et) : Expr(loc) {
   (elemType=et)->SetParent(this);
 }
 
-void NewArrayExpr::Emit() {
+Location * NewArrayExpr::Emit() {
   size->Emit();
   elemType->Emit();
+  return NULL;
 }
 
 
-void ReadIntegerExpr::Emit() {
-  //TBI
-  return;
+Location * ReadIntegerExpr::Emit() {
+  GENERATOR.GenBuiltInCall(ReadInteger, NULL, NULL);
+  return NULL;
 }
 
-void ReadLineExpr::Emit() {
-  //TBI
-  return;
+Location * ReadLineExpr::Emit() {
+  GENERATOR.GenBuiltInCall(ReadLine, NULL, NULL);
+  return NULL;
 }
