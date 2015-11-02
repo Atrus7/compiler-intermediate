@@ -35,6 +35,10 @@ fi
 #append the defs to the end
 cat defs.asm >> tmp.asm
 
+#stops early to manually run
+echo "Stopping early to manually run with my SPIMULATOR"
+exit 0;
+
 echo "-- spim  -file tmp.asm"
 echo " "
 $SPIM  -trap_file trap.handler -file tmp.asm
