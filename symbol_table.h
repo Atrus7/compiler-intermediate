@@ -20,6 +20,7 @@ class SymbolTable {
   SymbolTable * parent;
   Location * class_name;
   std::list<Location *> symbols;
+  int offset;
 
  public:
   static SymbolTable *active;
@@ -29,11 +30,12 @@ class SymbolTable {
   //prints symbols in table
   void DebugSymbolTable();
   Location *Lookup(const char * label);
-  void Add(Location *loc);
-  SymbolTable *FindClassTable(char * type_name);
+  void Add(const char * name, bool is_param, Type *type=NULL);
+  SymbolTable *FindClassTable(const char * type_name) ;
   Location * GetClass() {return class_name;}
   const char * GetClassName() {if(class_name != NULL) return class_name->GetName(); else return "";}
   SymbolTable *GetParent() {return parent;}
+  Segment GetSegment() {if(parent) return fpRelative; else return gpRelative;}
 };
 
 #endif

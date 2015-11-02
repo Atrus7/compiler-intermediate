@@ -1,7 +1,10 @@
 #include "symbol_table.h"
+#include "codegen.h"
+#include <string>
+#include <cstring>
 SymbolTable *SymbolTable::active = NULL;
 
-SymbolTable::SymbolTable() : symbols(){
+SymbolTable::SymbolTable() : symbols(), offset(CodeGenerator::OffsetToFirstGlobal){
   class_name = NULL;
   if(active){ // assuming we will be able to always track the active
     parent = active;
@@ -13,7 +16,7 @@ SymbolTable::SymbolTable() : symbols(){
   }
 }
 
-SymbolTable::SymbolTable(Location *l) : symbols(){
+SymbolTable::SymbolTable(Location *l) : symbols(), offset(CodeGenerator::OffsetToFirstLocal){
   class_name = l;
   if(active){ // assuming we will be able to always track the active
     parent = active;
@@ -32,7 +35,7 @@ Location *SymbolTable::Lookup(const char* label){
   std::list<Location *>::iterator it = symbols.begin();
     for (; it != symbols.end(); ++it){
     Location * symbol = *it;
-    if (label == symbol->GetName()){
+    if (std::strcmp(label, symbol->GetName()) ==0 ){
       return symbol;
     }
   }
@@ -44,15 +47,27 @@ Location *SymbolTable::Lookup(const char* label){
   }
 }
 
-void SymbolTable::Add(Location *loc){
-  Assert(loc);
-  if(!Lookup(loc->GetName())){
-    symbols.push_back(loc);
+
+void SymbolTable::Add(const char * name, bool is_param, Type *type){
+  static int param_offset = CodeGenerator::OffsetToFirstParam;
+
+  Location *loc  = new Location(GetSegment(), ((is_param)?param_offset : offset), name);
+  //will need to modify this for arrays
+  if(GetSegment() == fpRelative){
+    if(!is_param) offset -=4;
+    if(is_param) param_offset +=4;
   }
+  else{
+    offset +=4;
+  }
+  if(type){
+    loc->SetType(type);
+  }
+  symbols.push_back(loc);
 }
 
-SymbolTable *SymbolTable::FindClassTable(char * type_name){
-  if (type_name == class_name->GetName()){
+SymbolTable *SymbolTable::FindClassTable(const char * type_name){
+  if (std::strcmp(type_name, class_name->GetName()) == 0 ){
     return this;
   }
   if(parent != NULL){
@@ -72,5 +87,8 @@ void SymbolTable::DebugSymbolTable(){
   for (; it != symbols.end(); ++it){
     Location * symbol = *it;
     PrintDebug("dev", symbol->GetName());
+  }
+  if(parent != NULL){
+    parent->DebugSymbolTable();
   }
 }
