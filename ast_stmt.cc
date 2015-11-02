@@ -21,6 +21,10 @@ void Program::Check() {
      * semantically-invalid programs.
      */
 }
+void Program::Declare() {
+  SymbolTable *global = new SymbolTable();
+  decls->DeclareForAll();
+}
 Location * Program::Emit() {
     /* pp5: here is where the code generation is kicked off.
      *      The general idea is perform a tree traversal of the
@@ -29,7 +33,6 @@ Location * Program::Emit() {
      *      which makes for a great use of inheritance and
      *      polymorphism in the node classes.
      */
-  SymbolTable *global = new SymbolTable();
   decls->EmitForAll();
   GENERATOR.DoFinalCodeGen();
   return NULL;
@@ -41,6 +44,10 @@ StmtBlock::StmtBlock(List<VarDecl*> *d, List<Stmt*> *s) {
     (decls=d)->SetParentAll(this);
     (stmts=s)->SetParentAll(this);
 }
+void StmtBlock::Declare() {
+  decls->DeclareForAll();
+  stmts->DeclareForAll();
+}
 Location * StmtBlock::Emit() {
   decls->EmitForAll();
   stmts->EmitForAll();
@@ -51,6 +58,10 @@ ConditionalStmt::ConditionalStmt(Expr *t, Stmt *b) {
     Assert(t != NULL && b != NULL);
     (test=t)->SetParent(this);
     (body=b)->SetParent(this);
+}
+
+void  ConditionalStmt::Declare() {
+  body->Declare();
 }
 
 Location * ConditionalStmt::Emit() {
@@ -101,20 +112,26 @@ PrintStmt::PrintStmt(List<Expr*> *a) {
     (args=a)->SetParentAll(this);
 }
 Location * PrintStmt::Emit() {
+  PrintDebug("dev", "Print should be emitting");
   for (int i = 0; i < args->NumElements(); i++){
     Expr * param_expr = args->Nth(i);
     Location * param_loc = param_expr->Emit();
     Type *type = param_expr->GetType();
+    if(!type || type == Type::nullType){
+      type = param_loc->GetType();
+    }
     if(type == Type::intType || type == Type::boolType){
       GENERATOR.GenBuiltInCall(PrintInt, param_loc, NULL);
     }
     else if(type == Type::stringType){
       GENERATOR.GenBuiltInCall(PrintString, param_loc, NULL);
     }
+    else{
+      PrintDebug("dev", "Just hitting the else...");
+    }
 
   }
 
   args->EmitForAll();
-  //GENERATOR.GenBuiltInCall(ReadInteger, NULL, NULL);
   return NULL;
 }

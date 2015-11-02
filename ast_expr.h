@@ -95,6 +95,7 @@ class Operator : public Node
   public:
     Operator(yyltype loc, const char *tok);
     friend std::ostream& operator<<(std::ostream& out, Operator *o) { return out << o->tokenString; }
+    char *ToString(){ return &tokenString[0];}
     Location * Emit();
  };
 

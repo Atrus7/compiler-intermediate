@@ -54,6 +54,7 @@ class Node
     we need to return a Location pointer to resolve certain expr, such as assignexpr.
    */
   virtual Location * Emit() {return NULL;} //Do nothing
+  virtual void Declare(){return;}
   Segment GetSegment(){
     if(parent == NULL){
       return gpRelative;

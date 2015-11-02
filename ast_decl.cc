@@ -7,6 +7,7 @@
 #include "ast_stmt.h"
 #include "symbol_table.h"
 #include <cstring>
+#include <string>
 
 
 Decl::Decl(Identifier *n) : Node(*n->GetLocation()) {
@@ -20,17 +21,23 @@ VarDecl::VarDecl(Identifier *n, Type *t) : Decl(n) {
     (type=t)->SetParent(this);
 }
 
+Location * VarDecl::EmitFormal() {
+  GENERATOR.GenLabel(id->GetName());
+  Location * formal = SymbolTable::active->Lookup(id->GetName());
+  GENERATOR.GenLoadLabel(id->GetName());
+  //GENERATOR.GenLoad(formal, 0);
+  return NULL;
+}
 Location * VarDecl::Emit() {
-  char * var_name = id->GetName();
-  GENERATOR.GenLabel(var_name);
-  Location * declared_variable = GENERATOR.GenLoadLabel(var_name);
-  PrintDebug("dev", "Cmon");
-  PrintDebug("dev", SymbolTable::active->GetClassName());
-
-  SymbolTable::active->Add(declared_variable);
+  GENERATOR.GenLabel(id->GetName());
+  GENERATOR.GenLoadLabel(id->GetName());
   id->Emit();
   type->Emit();
   return NULL;
+}
+
+void VarDecl::Declare(){
+  SymbolTable::active->Add(id->GetName(), false, type);
 }
 
 ClassDecl::ClassDecl(Identifier *n, NamedType *ex, List<NamedType*> *imp, List<Decl*> *m) : Decl(n) {
@@ -42,18 +49,21 @@ ClassDecl::ClassDecl(Identifier *n, NamedType *ex, List<NamedType*> *imp, List<D
   (members=m)->SetParentAll(this);
   //GENERATOR
 }
-
-Location * ClassDecl::Emit() {
+void ClassDecl::Declare(){
   char * class_name = id->GetName();
-  GENERATOR.GenLabel(class_name);
   Location * declared_variable = GENERATOR.GenLoadLabel(class_name);
   class_table = new SymbolTable(declared_variable);
-  SymbolTable::active->Add(declared_variable);
-  // Class SymbolTable should be added before we consider the members
+  SymbolTable::active->Add(id->GetName(), false, new NamedType(id));
   SymbolTable::SwitchActive(class_table);
+  members->DeclareForAll();
+  SymbolTable::SwitchActive(class_table->GetParent());
+}
+
+Location * ClassDecl::Emit() {
+  SymbolTable::SwitchActive(class_table);
+  GENERATOR.GenLabel(SymbolTable::active->GetClassName());
   id->Emit();
   if(extends) extends->Emit();
-  //class_table->AddExtend(ex);
   implements->EmitForAll();
   members->EmitForAll();
   SymbolTable::SwitchActive(class_table->GetParent());
@@ -79,24 +89,40 @@ FnDecl::FnDecl(Identifier *n, Type *r, List<VarDecl*> *d) : Decl(n) {
   body = NULL;
 }
 
+void FnDecl::Declare(){
+  std::string function_name = std::string(id->GetName());
+  if(function_name != "main"){
+    function_name = "_" + function_name;
+  }
+  SymbolTable::active->Add(function_name.c_str(), false, returnType);
+  Location * declared_variable = SymbolTable::active->Lookup(function_name.c_str());
+  fn_table = new SymbolTable(declared_variable);
+  SymbolTable::SwitchActive(fn_table);
+
+  for (int i = 0; i < formals->NumElements(); i++){
+    VarDecl * var= formals->Nth(i);
+    SymbolTable::active->Add(var->GetName(), true, var->GetType());
+  }
+
+  body->Declare();
+  SymbolTable::SwitchActive(fn_table->GetParent());
+
+}
 Location * FnDecl::Emit() {
   //reset offsets since we'll add a stack frame
   //GENERATOR.ResetStackFrame();
-  char * function_name = id->GetName();
-
-  if(std::strcmp(function_name, "main") == 0){
-    //do main stuff
-  }
-
-  GENERATOR.GenLabel(function_name);
-  Location * declared_variable = GENERATOR.GenLoadLabel(function_name);
-  SymbolTable::active->Add(declared_variable);
-  SymbolTable *fn_table = new SymbolTable(declared_variable);
+  CodeGenerator::ResetStackFrame();
   SymbolTable::SwitchActive(fn_table);
+  GENERATOR.GenLabel(SymbolTable::active->GetClassName());
+  BeginFunc* func = GENERATOR.GenBeginFunc();
+  func->SetFrameSize(28);
   id->Emit();
-  formals->EmitForAll();
+  for (int i = 0; i < formals->NumElements(); i++){
+    formals->Nth(i)->EmitFormal();
+  }
   body->Emit();
   returnType->Emit();
+  GENERATOR.GenEndFunc();
   SymbolTable::SwitchActive(fn_table->GetParent());
   return NULL;
 }

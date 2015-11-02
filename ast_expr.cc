@@ -90,11 +90,7 @@ Location * AssignExpr::Emit() {
     PrintDebug("dev", "Not FieldAccess");
     return NULL;
   }
-  //PrintDebug("dev", "here");
-  //PrintDebug("dev", text);
-  //SymbolTable::active->DebugSymbolTable();
-  //PrintDebug("dev", SymbolTable::active->GetClassName());
-  Location * lhs = GENERATOR.GenLoadLabel(text);
+  Location * lhs = SymbolTable::active->Lookup(text);
   Assert(lhs); //should always be valid in P5...
   if(!rhs){
     PrintDebug("dev", "Warning: wasn't able to resolve rhs of Assign to variable: ");
@@ -106,7 +102,7 @@ Location * AssignExpr::Emit() {
   char temp [10];
   sprintf(temp, "_tmp%d", CodeGenerator::nextTempNum-1);
   GENERATOR.GenAssign(lhs, rhs);
-  return NULL;
+  return lhs;
 }
 Location * LogicalExpr::Emit() {
   //TBI
@@ -118,8 +114,17 @@ Location * EqualityExpr::Emit() {
 }
 
 Location * ArithmeticExpr::Emit() {
-  //TBI
-  return NULL;
+  Location *rhs = right->Emit();
+  char *op_str = op->ToString();
+
+  if(left){
+    Location *lhs = left->Emit();
+    return GENERATOR.GenBinaryOp(op_str, lhs, rhs);
+  }
+  else{ //unary minus is the only possibility
+    Location * zero = GENERATOR.GenLoadConstant(0);
+    return GENERATOR.GenBinaryOp("-", zero, rhs);
+  }
 }
 
 Location * RelationalExpr::Emit() {
@@ -148,9 +153,6 @@ FieldAccess::FieldAccess(Expr *b, Identifier *f)
 
 //TODO: Resolve bases and arrays
 char *FieldAccess::Resolve(){
-  //if(base){
-  //base->
-  //}
   return field->GetName();
 
 }
@@ -158,9 +160,24 @@ char *FieldAccess::Resolve(){
 Location * FieldAccess::Emit() {
   if(base){
     base->Emit();
+    //SymbolTable::active->Lookup(field);
   }
   field->Emit();
-  return NULL;
+  PrintDebug("dev", "Looking up");
+  PrintDebug("dev", field->GetName());
+  PrintDebug("dev", "-----------");
+  //SymbolTable::active->DebugSymbolTable();
+  //PrintDebug("dev", "-----------");
+  Location * loc = SymbolTable::active->Lookup(field->GetName());
+  if(loc){
+    PrintDebug("dev", loc->GetName());
+    PrintDebug("dev", "-----------");
+    return loc;
+  }
+  else{
+    PrintDebug("dev", "Didn't resolve FieldAccess");
+    return NULL;
+  }
 }
 
 
@@ -173,12 +190,40 @@ Call::Call(yyltype loc, Expr *b, Identifier *f, List<Expr*> *a) : Expr(loc)  {
 }
 
 Location * Call::Emit() {
+  //may temporarily swap the active, so need to save the current
+  SymbolTable* saved = SymbolTable::active;
   if(base){
-    base->Emit();
+    Location * loc = base->Emit();
+    SymbolTable* st = SymbolTable::active->FindClassTable(loc->GetName());
+    if(st){
+      SymbolTable::active = st;
+    }
+    else{
+      PrintDebug("dev", "Error in Call Resolution");
+    }
   }
-  field->Emit();
-  actuals->EmitForAll();
-  return NULL;
+  //prepended name with underscore
+  const char * function_name = ('_' + std::string(field->GetName())).c_str();
+  Location * loc = SymbolTable::active->Lookup(function_name);
+  if(!loc){
+      PrintDebug("dev", "Error in Call Resolution");
+      SymbolTable::active->DebugSymbolTable();
+      PrintDebug("dev", "---------------");
+      return NULL;
+  }
+
+  Location * ret_loc = GENERATOR.GenLCall(function_name, (loc->GetType() != Type::nullType));
+  for (int i = 0; i < actuals->NumElements(); i++){
+    Location* param_loc =  actuals->Nth(i)->Emit();
+    if(param_loc){
+      GENERATOR.GenPushParam(param_loc);
+    }
+    else{
+      PrintDebug("dev", "Error in Call's Parameter Resolution");
+    }
+  }
+  SymbolTable::active = saved;
+  return ret_loc;
 }
 
 

@@ -33,6 +33,7 @@ class Type : public Node
     friend std::ostream& operator<<(std::ostream& out, Type *t) { t->PrintToStream(out); return out; }
     virtual bool IsEquivalentTo(Type *other) { return this == other; }
     virtual Location * Emit(){return NULL;}
+    virtual char * GetName() { return typeName; }
 };
 
 class NamedType : public Type

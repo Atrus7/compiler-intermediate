@@ -29,6 +29,7 @@ class Program : public Node
      Program(List<Decl*> *declList);
      void Check();
      Location * Emit();
+     void Declare();
 };
 
 class Stmt : public Node
@@ -47,6 +48,7 @@ class StmtBlock : public Stmt
   public:
     StmtBlock(List<VarDecl*> *variableDeclarations, List<Stmt*> *statements);
     Location * Emit();
+    void Declare();
 };
 
 
@@ -59,6 +61,7 @@ class ConditionalStmt : public Stmt
   public:
     ConditionalStmt(Expr *testExpr, Stmt *body);
     Location * Emit();
+    virtual void Declare();
 };
 
 class LoopStmt : public ConditionalStmt
