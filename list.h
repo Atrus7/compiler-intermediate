@@ -80,6 +80,10 @@ template<class Element> class List {
       for (int i = 0; i < NumElements(); i++)
         Nth(i)->Emit();
     }
+    void DeclareForAll(){
+      for (int i = 0; i < NumElements(); i++)
+        Nth(i)->Declare();
+    }
 
 };
 

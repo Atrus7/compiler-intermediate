@@ -21,7 +21,7 @@
  */
 int main(int argc, char *argv[])
 {
-    SetDebugForKey("dev", true);
+    SetDebugForKey("dev", false);
     ParseCommandLine(argc, argv);
 
     InitScanner();
